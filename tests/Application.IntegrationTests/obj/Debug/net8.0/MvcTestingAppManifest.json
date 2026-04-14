@@ -1,0 +1,6 @@
+{
+  "Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "\/Users\/mac\/Desktop\/kanban-backend\/src\/Application",
+  "Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "\/Users\/mac\/Desktop\/kanban-backend\/src\/Domain",
+  "Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "\/Users\/mac\/Desktop\/kanban-backend\/src\/Infrastructure",
+  "Web, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "\/Users\/mac\/Desktop\/kanban-backend\/src\/Web"
+}

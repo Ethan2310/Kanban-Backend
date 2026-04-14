@@ -1,0 +1,11 @@
+/Users/mac/Desktop/kanban-backend/src/Domain/bin/Debug/net8.0/Domain.deps.json
+/Users/mac/Desktop/kanban-backend/src/Domain/bin/Debug/net8.0/Domain.dll
+/Users/mac/Desktop/kanban-backend/src/Domain/bin/Debug/net8.0/Domain.pdb
+/Users/mac/Desktop/kanban-backend/src/Domain/obj/Debug/net8.0/Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/mac/Desktop/kanban-backend/src/Domain/obj/Debug/net8.0/Domain.AssemblyInfoInputs.cache
+/Users/mac/Desktop/kanban-backend/src/Domain/obj/Debug/net8.0/Domain.AssemblyInfo.cs
+/Users/mac/Desktop/kanban-backend/src/Domain/obj/Debug/net8.0/Domain.csproj.CoreCompileInputs.cache
+/Users/mac/Desktop/kanban-backend/src/Domain/obj/Debug/net8.0/Domain.dll
+/Users/mac/Desktop/kanban-backend/src/Domain/obj/Debug/net8.0/refint/Domain.dll
+/Users/mac/Desktop/kanban-backend/src/Domain/obj/Debug/net8.0/Domain.pdb
+/Users/mac/Desktop/kanban-backend/src/Domain/obj/Debug/net8.0/ref/Domain.dll
