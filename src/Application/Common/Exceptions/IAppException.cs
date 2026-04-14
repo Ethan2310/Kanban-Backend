@@ -1,4 +1,5 @@
 namespace Application.Common.Exceptions;
+
 public interface IAppException
 {
     int StatusCode { get; }

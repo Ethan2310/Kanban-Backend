@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Application.Common.Exceptions;
 
 namespace Web.Middleware;
+
 public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions = new()

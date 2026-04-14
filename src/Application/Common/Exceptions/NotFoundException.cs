@@ -1,4 +1,5 @@
 namespace Application.Common.Exceptions;
+
 public class NotFoundException : Exception, IAppException
 {
     public int StatusCode => 404;
