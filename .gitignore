@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+.env.local
+# .env.example is intentionally committed as a template
 
 # User-specific files
 *.rsuser
