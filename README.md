@@ -45,14 +45,33 @@ This will automatically run `dotnet format` before every commit so formatting is
 ### Run locally
 
 ```bash
-# Restore dependencies
-dotnet restore
+# Apply any pending database migrations
+make migrate
 
-# Apply database migrations
-dotnet ef database update --project src/Infrastructure --startup-project src/Web
-
-# Run the API
-dotnet run --project src/Web
+# Start the API (restores dependencies then runs the server)
+make run
 ```
 
 API docs are served at `/scalar` when running locally.
+
+## Running Migrations
+
+### Apply pending migrations
+
+```bash
+make migrate
+```
+
+### Create a new migration (after changing an entity)
+
+```bash
+make migration name=YourMigrationName
+```
+
+This generates a new file in `src/Infrastructure/Migrations/`. Before applying, open the generated `<timestamp>_YourMigrationName.cs` file and review the `Up()` method — pay close attention to any `DropColumn` or `DropTable` calls, as these are destructive and cannot be undone once applied against live data.
+
+Once satisfied, apply it:
+
+```bash
+make migrate
+```
