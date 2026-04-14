@@ -22,6 +22,7 @@ build:
 	dotnet build
 
 run:
+	dotnet restore
 	dotnet run --project $(WEB_PROJECT)
 
 .PHONY: migrate migration migration-undo build run
