@@ -414,6 +414,108 @@ No unit tests. All tests are integration tests using `WebApplicationFactory`.
 
 ---
 
+## Error Handling
+
+The error handling architecture mirrors the interface-driven pattern, adapted to C# exceptions and ASP.NET Core middleware.
+
+### Core Design: Interface-Driven Exceptions
+
+Every application exception implements `IAppException`, which carries its own HTTP status code and machine-readable error code. This means the middleware never needs a type-switch — it just checks the interface.
+
+```csharp
+// Application/Common/Exceptions/IAppException.cs
+// Equivalent to: HTTPStatusError + CodedError interfaces in the Go service
+public interface IAppException
+{
+    int StatusCode { get; }    // → HTTP status code
+    string ErrorCode { get; }  // → machine-readable body field
+}
+```
+
+### Typed Exceptions
+
+```
+Application/Common/Exceptions/
+  IAppException.cs        ← marker interface (HTTPStatusError equivalent)
+  NotFoundException.cs    ← 404, error_code: "NOT_FOUND"
+  ValidationException.cs  ← 400, error_code: "VALIDATION_FAILED", carries field errors
+```
+
+Future exceptions (e.g. `ConflictException` for constraint violations, `ForbiddenException` for authz) simply implement `IAppException` and are automatically handled — no middleware changes required.
+
+### The Flow
+
+```
+Service method
+  └─ validates with FluentValidation → throws ValidationException(failures) if invalid
+  └─ queries DB → throws NotFoundException(name, id) if entity missing
+  └─ (future) constraint violation → throws ConflictException
+
+Endpoint handler
+  └─ calls service, returns result — NEVER catches exceptions
+
+ExceptionHandlingMiddleware  (single entry point — handlers.MapError() equivalent)
+  ├─ exception is IAppException?  YES → StatusCode + ErrorCode from the exception itself
+  │                                      ValidationException → also include Errors dict
+  └─ NO → fallback → 500 + ILogger
+```
+
+### HTTP Response Shape
+
+```json
+{
+  "status": 400,
+  "title": "Bad Request",
+  "detail": "One or more validation failures have occurred.",
+  "error_code": "VALIDATION_FAILED",
+  "errors": {
+    "title": ["must not be empty"],
+    "board_id": ["must be greater than 0"]
+  }
+}
+```
+
+For `NotFoundException` the `errors` field is omitted (`WhenWritingNull`):
+
+```json
+{
+  "status": 404,
+  "title": "Not Found",
+  "detail": "Entity 'Task' with id '42' was not found.",
+  "error_code": "NOT_FOUND"
+}
+```
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|---|---|
+| Interface-driven (`IAppException`) | New exception types are handled automatically — no central switch/case |
+| Single middleware entry point | One place shapes all error responses; endpoint code stays clean |
+| Exceptions throw, endpoints don't catch | Handlers are always thin; control flow is via exceptions |
+| `WhenWritingNull` on `errors` | Field is only present on 400 responses, not on 404/500 |
+| Fallback logs via `ILogger` | Structured logging without coupling to any telemetry vendor; swap in Sentry/OpenTelemetry here later |
+
+### Adding a New Exception Type
+
+1. Create the class in `Application/Common/Exceptions/`, implement `IAppException`
+2. Throw it from the relevant service method
+3. No middleware changes needed — `is IAppException` catches it automatically
+
+```csharp
+// Example: future ConflictException for unique constraint violations
+// (equivalent to MapConstraintError() in the Go service's usecase layer)
+public class ConflictException : Exception, IAppException
+{
+    public int StatusCode => 409;
+    public string ErrorCode => "CONFLICT";
+
+    public ConflictException(string message) : base(message) { }
+}
+```
+
+---
+
 ## NuGet Packages by Layer
 
 | Layer | Package |
