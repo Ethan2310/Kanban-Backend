@@ -32,6 +32,16 @@ Clean Architecture with four layers: Domain, Application, Infrastructure, and We
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - MySQL 8.0.32+
 
+### First-time setup
+
+After cloning, run this once to enable the pre-commit formatting hook:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This will automatically run `dotnet format` before every commit so formatting issues are fixed locally before they reach CI.
+
 ### Run locally
 
 ```bash

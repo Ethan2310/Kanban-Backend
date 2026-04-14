@@ -1,0 +1,17 @@
+#!/bin/sh
+# Auto-format staged .cs files before committing.
+# Runs dotnet format and re-stages any files it fixes.
+
+echo "Running dotnet format..."
+dotnet format --no-restore
+
+if [ $? -ne 0 ]; then
+  echo "dotnet format failed. Commit aborted."
+  exit 1
+fi
+
+# Re-stage any files that were fixed by the formatter
+git add -u
+
+echo "Format check passed."
+exit 0
