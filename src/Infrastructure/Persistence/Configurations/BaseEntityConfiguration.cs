@@ -19,7 +19,7 @@ public abstract class BaseEntityConfiguration<T> : IEntityTypeConfiguration<T> w
             .IsUnique();
 
         builder.Property(e => e.CreatedById)
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(e => e.CreatedOn)
             .IsRequired();
