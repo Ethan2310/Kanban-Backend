@@ -8,6 +8,8 @@ using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
+using Scalar.AspNetCore;
+
 using Web.Endpoints;
 using Web.Middleware;
 using Web.Services;
@@ -21,6 +23,9 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
@@ -46,6 +51,15 @@ var app = builder.Build();
 
 // Must be registered before all other middleware so every exception is caught
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger(); // serves JSON spec at /swagger/v1/swagger.json
+    app.MapScalarApiReference(options =>
+    {
+        options.OpenApiRoutePattern = "/swagger/v1/swagger.json";
+    }); // serves interactive UI at /scalar/v1
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

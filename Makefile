@@ -25,4 +25,18 @@ run:
 	dotnet restore
 	dotnet run --project $(WEB_PROJECT)
 
-.PHONY: migrate migration migration-undo build run
+# Download OpenAPI spec from the running server (make sure the server is running first)
+openapi-spec:
+	curl -s http://localhost:5081/swagger/v1/swagger.json -o openapi.json
+	@echo "Spec saved to openapi.json"
+
+# Generate Postman collection from the OpenAPI spec
+postman-gen:
+	@node postman/generate-collection.js
+
+# Download spec and regenerate Postman collection in one step
+postman-sync:
+	$(MAKE) openapi-spec
+	$(MAKE) postman-gen
+
+.PHONY: migrate migration migration-undo build run openapi-spec postman-gen postman-sync
