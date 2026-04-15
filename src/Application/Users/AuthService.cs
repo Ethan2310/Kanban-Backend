@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 
 using Domain.Entities;
@@ -41,10 +42,7 @@ public class AuthService
             .AnyAsync(u => u.Email == request.Email, ct);
 
         if (emailTaken)
-            throw new ValidationException(
-            [
-                new FluentValidation.Results.ValidationFailure(nameof(request.Email), "Email is already in use.")
-            ]);
+            throw new ConflictException("A user with this email address already exists.");
 
         int? createdById = null;
 
@@ -54,10 +52,7 @@ public class AuthService
                 .FirstOrDefaultAsync(u => u.Id == request.AddedById.Value, ct);
 
             if (addedByUser is null || addedByUser.Role != Domain.Enumerations.UserRole.Admin)
-                throw new ValidationException(
-                [
-                    new FluentValidation.Results.ValidationFailure(nameof(request.AddedById), "AddedById must reference an existing admin user.")
-                ]);
+                throw new UnauthorizedException("You do not have permission to register users.");
 
             createdById = request.AddedById.Value;
         }
@@ -91,10 +86,7 @@ public class AuthService
             .FirstOrDefaultAsync(u => u.Email == request.Email, ct);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            throw new ValidationException(
-            [
-                new FluentValidation.Results.ValidationFailure("credentials", "Invalid email or password.")
-            ]);
+            throw new UnauthorizedException("Invalid email or password.");
 
         var token = _jwt.Generate(user.Id, user.Email, user.Role.ToString());
 
