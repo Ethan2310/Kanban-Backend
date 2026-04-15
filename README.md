@@ -52,7 +52,7 @@ make migrate
 make run
 ```
 
-API docs are served at `/scalar` when running locally.
+API docs are served at `http://localhost:5081/scalar/v1` when running locally.
 
 ## Running Migrations
 
@@ -75,3 +75,46 @@ Once satisfied, apply it:
 ```bash
 make migrate
 ```
+
+## API Docs
+
+With the server running, the following are available:
+
+| URL | Description |
+|---|---|
+| `http://localhost:5081/scalar/v1` | Interactive Scalar UI — browse and call endpoints in the browser |
+| `http://localhost:5081/swagger/v1/swagger.json` | Raw OpenAPI JSON spec |
+
+To download the spec to a local file:
+
+```bash
+make openapi-spec
+```
+
+This saves the spec to `openapi.json` in the project root.
+
+## Postman
+
+### Import endpoints automatically
+
+1. Start the server (`make run`)
+2. In Postman: **Import → Link** → paste `http://localhost:5081/swagger/v1/swagger.json`
+3. Postman generates a full collection from the spec — re-import whenever new endpoints are added
+
+### Set up a local environment
+
+1. In Postman: **Environments → Add** → name it `Local`
+2. Add variable: `baseUrl` = `http://localhost:5081`
+3. All requests should use `{{baseUrl}}/api/...` as the URL
+4. When deployed later, create a `Production` environment with the live URL and switch with one click
+
+### Auto-capture the JWT token after login
+
+On the `POST /api/auth/login` request, add the following to the **Tests** tab:
+
+```js
+const token = pm.response.json().token;
+pm.environment.set("authToken", token);
+```
+
+Then on the Collection → **Authorization** tab, set type to `Bearer Token` with value `{{authToken}}`. All requests in the collection will inherit it — log in once and all protected endpoints are authorized automatically.
