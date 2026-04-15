@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 
 using Application;
 using Application.Common.Interfaces;
@@ -15,6 +16,7 @@ using Serilog.Events;
 
 using Web.Endpoints;
 using Web.Middleware;
+using Web.OpenApi;
 using Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,8 +51,12 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+    options.SchemaFilter<StringEnumSchemaFilter>());
 
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
