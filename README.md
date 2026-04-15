@@ -98,15 +98,13 @@ This saves the spec to `openapi.json` in the project root.
 ### Import endpoints automatically
 
 1. Start the server (`make run`)
-2. In Postman: **Import → Link** → paste `http://localhost:5081/swagger/v1/swagger.json`
-3. Postman generates a full collection from the spec — re-import whenever new endpoints are added
+2. Run (`make postman-sync`)
 
 ### Set up a local environment
 
 1. In Postman: **Environments → Add** → name it `Local`
 2. Add variable: `baseUrl` = `http://localhost:5081`
 3. All requests should use `{{baseUrl}}/api/...` as the URL
-4. When deployed later, create a `Production` environment with the live URL and switch with one click
 
 ### Auto-capture the JWT token after login
 
