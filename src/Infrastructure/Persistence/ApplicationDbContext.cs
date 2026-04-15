@@ -25,7 +25,20 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<UserProjectAccess> UserProjectAccesses => Set<UserProjectAccess>();
     public DbSet<TaskStatusHistory> TaskStatusHistories => Set<TaskStatusHistory>();
 
-    public override System.Threading.Tasks.Task<int> SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
+    public override System.Threading.Tasks.Task<int> SaveChangesAsync(CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        {
+            if (entry.State == EntityState.Added)
+                entry.Entity.CreatedOn = now;
+            else if (entry.State == EntityState.Modified)
+                entry.Entity.UpdatedOn = now;
+        }
+
+        return base.SaveChangesAsync(ct);
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
