@@ -8,6 +8,10 @@
 .env.local
 # .env.example is intentionally committed as a template
 
+# Serilog rolling log files
+logs/
+src/Web/logs/
+
 # User-specific files
 *.rsuser
 *.suo

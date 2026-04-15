@@ -10,6 +10,9 @@ using Microsoft.IdentityModel.Tokens;
 
 using Scalar.AspNetCore;
 
+using Serilog;
+using Serilog.Events;
+
 using Web.Endpoints;
 using Web.Middleware;
 using Web.Services;
@@ -18,6 +21,28 @@ var builder = WebApplication.CreateBuilder(args);
 
 var envFile = builder.Environment.IsDevelopment() ? ".env.local" : ".env";
 DotNetEnv.Env.Load(Path.Combine(Directory.GetCurrentDirectory(), envFile));
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateLogger();
+
+builder.Host.UseSerilog((context, config) =>
+{
+    var logsPath = Path.Combine(context.HostingEnvironment.ContentRootPath, "..", "..", "logs", "log-.txt");
+    config
+        .MinimumLevel.Information()
+        .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File(
+            path: logsPath,
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 14,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}");
+});
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -51,6 +76,8 @@ var app = builder.Build();
 
 // Must be registered before all other middleware so every exception is caught
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {

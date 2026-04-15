@@ -522,8 +522,48 @@ public class ConflictException : Exception, IAppException
 |---|---|
 | Application | `FluentValidation`, `FluentValidation.DependencyInjectionExtensions`, `BCrypt.Net-Next`, `Microsoft.Extensions.Logging.Abstractions` |
 | Infrastructure | `Microsoft.EntityFrameworkCore`, `Pomelo.EntityFrameworkCore.MySql`, `Microsoft.EntityFrameworkCore.Design` |
-| Web | `Microsoft.AspNetCore.Authentication.JwtBearer`, `Scalar.AspNetCore`, `Microsoft.AspNetCore.OpenApi` |
+| Web | `Microsoft.AspNetCore.Authentication.JwtBearer`, `Scalar.AspNetCore`, `Microsoft.AspNetCore.OpenApi`, `Serilog.AspNetCore`, `Serilog.Sinks.File` |
 | Tests | `xunit`, `Microsoft.AspNetCore.Mvc.Testing`, `FluentAssertions`, `Microsoft.EntityFrameworkCore.Sqlite` |
+
+---
+
+## Logging
+
+Logging is handled by **Serilog**, configured in `src/Web/Program.cs`.
+
+### Sinks
+
+| Sink | Output |
+|---|---|
+| Console | Coloured, formatted output in the terminal during development |
+| File | Rolling daily log file at `logs/log-YYYYMMDD.txt` in the project root |
+
+Log files are retained for 14 days then deleted automatically. The `logs/` directory is gitignored.
+
+### Log levels
+
+| Source | Level |
+|---|---|
+| Application code | `Information` and above |
+| EF Core SQL commands | `Warning` and above (suppresses routine SELECT/INSERT noise) |
+
+### HTTP request logging
+
+`UseSerilogRequestLogging()` replaces ASP.NET's default multi-line request logs with a single structured line per request:
+
+```
+2026-04-15 10:32:01 [INF] HTTP POST /api/auth/login responded 201 in 45ms
+```
+
+### Tailing logs locally
+
+```bash
+tail -f logs/log-$(date +%Y%m%d).txt
+```
+
+### Future
+
+Serilog is sink-agnostic — adding Sentry, Seq, or OpenTelemetry later is a one-line change in `Program.cs` with no changes to application code.
 
 ---
 
