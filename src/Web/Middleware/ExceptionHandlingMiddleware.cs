@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 
 using Application.Common.Exceptions;
 
+using Web.OpenApi;
+
 namespace Web.Middleware;
 
 public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
@@ -34,7 +36,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         {
             context.Response.StatusCode = appEx.StatusCode;
 
-            var body = new ErrorResponse(
+            var body = new ApiErrorResponse(
                 Status: appEx.StatusCode,
                 Title: ReasonPhraseFor(appEx.StatusCode),
                 Detail: exception.Message,
@@ -52,7 +54,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
 
             context.Response.StatusCode = 500;
 
-            var body = new ErrorResponse(
+            var body = new ApiErrorResponse(
                 Status: 500,
                 Title: "Internal Server Error",
                 Detail: "An unexpected error occurred.",
@@ -74,12 +76,4 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         422 => "Unprocessable Entity",
         _ => "Error"
     };
-
-    private record ErrorResponse(
-        int Status,
-        string Title,
-        string Detail,
-        string ErrorCode,
-        IDictionary<string, string[]>? Errors
-    );
 }

@@ -21,8 +21,18 @@ using Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 1. Define CORS Policy Name
+const string CorsPolicy = "AllowFlutterFrontend";
+
 var envFile = builder.Environment.IsDevelopment() ? ".env.local" : ".env";
 DotNetEnv.Env.Load(Path.Combine(Directory.GetCurrentDirectory(), envFile));
+
+var corsOrigins = (builder.Configuration["Cors:AllowedOrigins"]
+    ?? throw new InvalidOperationException("Cors:AllowedOrigins is not configured."))
+    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+if (corsOrigins.Length == 0)
+    throw new InvalidOperationException("Cors:AllowedOrigins must contain at least one origin.");
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -49,6 +59,17 @@ builder.Host.UseSerilog((context, config) =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// 2. Register CORS services
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicy, policy =>
+    {
+        policy.WithOrigins(corsOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -56,7 +77,10 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
-    options.SchemaFilter<StringEnumSchemaFilter>());
+{
+    options.SupportNonNullableReferenceTypes();
+    options.SchemaFilter<StringEnumSchemaFilter>();
+});
 
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
@@ -80,18 +104,20 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Must be registered before all other middleware so every exception is caught
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseSerilogRequestLogging();
 
+// 3. Enable CORS (Must be before Authentication and Endpoints)
+app.UseCors(CorsPolicy);
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger(); // serves JSON spec at /swagger/v1/swagger.json
+    app.UseSwagger();
     app.MapScalarApiReference(options =>
     {
         options.OpenApiRoutePattern = "/swagger/v1/swagger.json";
-    }); // serves interactive UI at /scalar/v1
+    });
 }
 
 app.UseAuthentication();
