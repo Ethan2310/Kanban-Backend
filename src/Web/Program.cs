@@ -26,12 +26,15 @@ const string CorsPolicy = "AllowFlutterFrontend";
 
 var envFile = builder.Environment.IsDevelopment() ? ".env.local" : ".env";
 DotNetEnv.Env.Load(Path.Combine(Directory.GetCurrentDirectory(), envFile));
+builder.Configuration.AddEnvironmentVariables();
 
 var corsOrigins = (builder.Configuration["Cors:AllowedOrigins"]
     ?? throw new InvalidOperationException("Cors:AllowedOrigins is not configured."))
     .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
-if (corsOrigins.Length == 0)
+var allowAnyLocalhostOrigin = builder.Configuration.GetValue<bool>("Cors:AllowAnyLocalhostOrigin");
+
+if (!allowAnyLocalhostOrigin && corsOrigins.Length == 0)
     throw new InvalidOperationException("Cors:AllowedOrigins must contain at least one origin.");
 
 Log.Logger = new LoggerConfiguration()
@@ -64,8 +67,23 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicy, policy =>
     {
-        policy.WithOrigins(corsOrigins)
-              .AllowAnyHeader()
+        if (allowAnyLocalhostOrigin)
+        {
+            policy.SetIsOriginAllowed(origin =>
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                    return false;
+
+                return uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+            });
+        }
+        else
+        {
+            policy.WithOrigins(corsOrigins);
+        }
+
+        policy.AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
