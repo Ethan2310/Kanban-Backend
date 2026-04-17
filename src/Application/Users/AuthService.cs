@@ -18,15 +18,18 @@ public class AuthService
     private readonly IJwtTokenGenerator _jwt;
     private readonly IValidator<RegisterRequest> _registerValidator;
     private readonly IValidator<LoginRequest> _loginValidator;
+    private readonly IValidator<DeleteUserRequest> _deleteUserValidator;
 
     public AuthService(
         IApplicationDbContext context,
         IJwtTokenGenerator jwt,
+        IValidator<DeleteUserRequest> deleteUserValidator,
         IValidator<RegisterRequest> registerValidator,
         IValidator<LoginRequest> loginValidator)
     {
         _context = context;
         _jwt = jwt;
+        _deleteUserValidator = deleteUserValidator;
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
     }
@@ -91,5 +94,25 @@ public class AuthService
         var token = _jwt.Generate(user.Id, user.Email, user.Role.ToString());
 
         return new AuthResponse(token, user.Id, user.Email, user.FirstName, user.LastName, user.Role.ToString());
+    }
+
+    public async Task<DeleteUserResponse> DeleteUserAsync(int adminId, int userId, CancellationToken ct)
+    {
+        var validation = await _deleteUserValidator.ValidateAsync(new DeleteUserRequest(adminId, userId), ct);
+        if (!validation.IsValid)
+            throw new ValidationException(validation.Errors);
+
+        var adminUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == adminId, ct);
+
+        if (adminUser is null || adminUser.Role != UserRole.Admin)
+            throw new UnauthorizedException("You do not have permission to delete users.");
+
+        var userToDelete = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == userId, ct) ?? throw new NotFoundException(userId.ToString(), userId);
+        _context.Users.Remove(userToDelete);
+        await _context.SaveChangesAsync(ct);
+
+        return new DeleteUserResponse(true);
     }
 }

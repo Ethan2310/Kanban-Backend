@@ -38,3 +38,15 @@ public class LoginRequestValidator : AbstractValidator<LoginRequest>
             .NotEmpty();
     }
 }
+
+public class DeleteUserRequestValidator : AbstractValidator<DeleteUserRequest>
+{
+    public DeleteUserRequestValidator()
+    {
+        RuleFor(x => x.AdminID)
+            .GreaterThan(0);
+
+        RuleFor(x => x.UserID)
+            .GreaterThan(0);
+    }
+}

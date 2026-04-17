@@ -142,5 +142,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 AuthEndpoints.Map(app);
+UserEndpoints.Map(app);
 
 app.Run();
