@@ -1,0 +1,7 @@
+$kind: http-request
+name: Search Users
+method: GET
+url: '{{baseUrl}}/api/users/search'
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
