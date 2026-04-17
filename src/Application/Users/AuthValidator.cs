@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 using FluentValidation;
 
 namespace Application.Users;
@@ -48,5 +50,28 @@ public class DeleteUserRequestValidator : AbstractValidator<DeleteUserRequest>
 
         RuleFor(x => x.UserID)
             .GreaterThan(0);
+    }
+}
+
+public class GetUsersRequestValidator : AbstractValidator<GetUsersRequest>
+{
+    public GetUsersRequestValidator()
+    {
+        RuleFor(x => x.FirstName)
+            .MaximumLength(100);
+
+        RuleFor(x => x.LastName)
+            .MaximumLength(100);
+
+        RuleFor(x => x.Email)
+            .MaximumLength(255)
+            .EmailAddress()
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
+
+        RuleFor(x => x.PageNumber)
+            .GreaterThan(0);
+
+        RuleFor(x => x.PageSize)
+            .InclusiveBetween(1, PaginationRequestDefaults.MaxPageSize);
     }
 }
