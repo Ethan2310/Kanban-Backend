@@ -2,6 +2,11 @@
 
 This document walks through every file you need to touch to add a new endpoint, using the auth endpoints (`POST /api/auth/register`, `POST /api/auth/login`) as the reference implementation.
 
+It also covers the OpenAPI requirements that the frontend depends on:
+- request and response fields must generate with the correct nullability
+- every endpoint must declare its success and error responses explicitly
+- CORS origins are configured from `.env.local`, not hard-coded in `Program.cs`
+
 ---
 
 ## Overview
@@ -47,6 +52,11 @@ public record RegisterResponse(
 - Request records are what the endpoint receives from the client (request body).
 - Response records are what the endpoint returns. Never return a domain entity directly.
 - Keep all DTOs for one feature in a single file.
+- For required fields, use non-nullable C# types such as `string`, `int`, `DateTime`, or a non-nullable enum. These generate as non-nullable in OpenAPI because Swagger is configured with `SupportNonNullableReferenceTypes()` in `src/Web/Program.cs`.
+- Only use nullable types such as `string?`, `int?`, or `DateTime?` when the field is genuinely optional.
+
+**OpenAPI note:**
+- If a field shows as nullable in Swagger when it should not, check the DTO first. The spec is generated from the C# nullability on the request and response types.
 
 ---
 
@@ -81,6 +91,7 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
 - Validators are **auto-discovered** by `AddValidatorsFromAssembly` in `DependencyInjection.cs` — you do not register them manually.
 - Inject `IValidator<TRequest>` into the service constructor and call `ValidateAsync` as the first thing in every service method.
 - Throw `ValidationException(validation.Errors)` if validation fails — the middleware maps this to a `400 Bad Request`.
+- Keep validator rules aligned with your DTO nullability. A required DTO field should usually also have a `NotEmpty()` or equivalent rule where appropriate.
 
 ---
 
@@ -174,6 +185,10 @@ Create a static class in `src/Web/Endpoints/`. The endpoint handler should be a 
 // src/Web/Endpoints/AuthEndpoints.cs
 using Application.Users;
 
+using Microsoft.AspNetCore.Http;
+
+using Web.OpenApi;
+
 namespace Web.Endpoints;
 
 public static class AuthEndpoints
@@ -188,6 +203,11 @@ public static class AuthEndpoints
             return Results.Created($"/api/users/{result.UserId}", result);
         })
         .WithName("Register")
+        .Produces<RegisterResponse>(StatusCodes.Status201Created)
+        .Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)
+        .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ApiErrorResponse>(StatusCodes.Status409Conflict)
+        .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError)
         .AllowAnonymous();
 
         group.MapPost("/login", async (LoginRequest req, AuthService auth, CancellationToken ct) =>
@@ -196,6 +216,10 @@ public static class AuthEndpoints
             return Results.Ok(result);
         })
         .WithName("Login")
+        .Produces<AuthResponse>(StatusCodes.Status200OK)
+        .Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)
+        .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError)
         .AllowAnonymous();
     }
 }
@@ -205,6 +229,7 @@ public static class AuthEndpoints
 - No business logic in the endpoint handler — one line per handler.
 - Inject the service and `CancellationToken` directly as handler parameters. ASP.NET Core resolves them automatically.
 - Use `.AllowAnonymous()` only for public routes (login, register). Protected routes use `.RequireAuthorization()`.
+- Every endpoint must declare its OpenAPI success and error responses with `.Produces<T>()`. Do not rely on implicit response generation if the frontend consumes the spec.
 - Use the correct HTTP result for the operation:
 
 | Operation | Return |
@@ -215,6 +240,23 @@ public static class AuthEndpoints
 
 - Give every endpoint a unique `.WithName("...")` — this is used by OpenAPI.
 - Group related endpoints under the same `MapGroup` prefix.
+
+**Recommended error response mappings:**
+
+| Scenario | Response metadata |
+|---|---|
+| Validation failure | `.Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)` |
+| Authentication failure | `.Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)` |
+| Forbidden | `.Produces<ApiErrorResponse>(StatusCodes.Status403Forbidden)` |
+| Missing resource | `.Produces<ApiErrorResponse>(StatusCodes.Status404NotFound)` |
+| Business conflict | `.Produces<ApiErrorResponse>(StatusCodes.Status409Conflict)` |
+| Unexpected server error | `.Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError)` |
+
+Only declare the statuses the endpoint can actually return.
+
+**Error payload shape:**
+- Error responses use `Web.OpenApi.ApiErrorResponse`.
+- This is the shared schema emitted by the exception middleware, so reuse it for `.Produces<ApiErrorResponse>(...)` declarations instead of inventing endpoint-specific error DTOs.
 
 ---
 
@@ -231,14 +273,60 @@ AuthEndpoints.Map(app);      // ← add your endpoint group here
 YourFeatureEndpoints.Map(app);
 ```
 
+## Step 7 — Keep OpenAPI Generation Correct
+
+When adding or changing endpoints, preserve the Swagger configuration in `src/Web/Program.cs`:
+
+```csharp
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SupportNonNullableReferenceTypes();
+    options.SchemaFilter<StringEnumSchemaFilter>();
+});
+```
+
+**Why this matters:**
+- `SupportNonNullableReferenceTypes()` makes OpenAPI follow C# nullable reference metadata so required `string` fields do not appear as nullable.
+- `StringEnumSchemaFilter` keeps enums readable in the generated spec.
+
+If you add new DTOs and the generated spec looks wrong, check these three things first:
+- the DTO uses correct nullable vs non-nullable types
+- the endpoint declares the right `.Produces<T>()` metadata
+- Swagger registration in `Program.cs` still includes the non-nullable support
+
+## Step 8 — Configure CORS Through `.env.local`
+
+Do not hard-code frontend origins in `Program.cs`. CORS is driven by environment configuration.
+
+`src/Web/Program.cs` reads:
+- `Cors:AllowedOrigins`
+- `Cors:AllowAnyLocalhostOrigin`
+
+In `.env.local`, those keys are written with double underscores:
+
+```env
+Cors__AllowedOrigins=http://localhost:54991,http://localhost:55863
+Cors__AllowAnyLocalhostOrigin=true
+```
+
+**Rules:**
+- Use a comma-separated list in `Cors__AllowedOrigins` for explicit frontend origins.
+- Set `Cors__AllowAnyLocalhostOrigin=true` for local development when the frontend runs on changing localhost ports.
+- Keep `app.UseCors(CorsPolicy);` before authentication and endpoint mapping in `Program.cs`.
+- Update `.env.example` whenever a required CORS setting changes.
+
 ---
 
 ## Checklist
 
 - [ ] DTOs defined in `src/Application/<Feature>/<Feature>Dtos.cs`
+- [ ] DTO nullability matches the intended OpenAPI schema
 - [ ] Validators defined in `src/Application/<Feature>/<Feature>Validator.cs`
 - [ ] Service implemented in `src/Application/<Feature>/<Feature>Service.cs`
 - [ ] Service registered in `src/Application/DependencyInjection.cs`
 - [ ] Endpoint group created in `src/Web/Endpoints/<Feature>Endpoints.cs`
+- [ ] Endpoint group includes `.Produces<T>()` metadata for success and error codes
 - [ ] Endpoint group mapped in `src/Web/Program.cs`
+- [ ] Swagger still uses `SupportNonNullableReferenceTypes()` in `src/Web/Program.cs`
+- [ ] `.env.example` documents any required CORS configuration
 - [ ] `dotnet build` passes with 0 errors
