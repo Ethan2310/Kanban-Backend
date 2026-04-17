@@ -1,3 +1,4 @@
+using Application.Common.Models;
 using Application.Users;
 
 using Microsoft.AspNetCore.Http;
@@ -33,5 +34,31 @@ public static class UserEndpoints
             .Produces<ApiErrorResponse>(StatusCodes.Status403Forbidden)
             .Produces<ApiErrorResponse>(StatusCodes.Status404NotFound)
             .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/search", async (
+            string? firstName,
+            string? lastName,
+            string? email,
+            AuthService auth,
+            CancellationToken ct,
+            int pageNumber = PaginationRequestDefaults.PageNumber,
+            int pageSize = PaginationRequestDefaults.PageSize) =>
+        {
+            var request = new GetUsersRequest(firstName, lastName, email, pageNumber, pageSize);
+            var result = await auth.GetUsersAsync(request, ct);
+            return Results.Ok(result);
+        })
+        .WithName("SearchUsers")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Search for users";
+            operation.Description = "Search for users by first name, last name, or email with pagination support via pageNumber and pageSize query parameters.";
+            return operation;
+        })
+        .Produces<GetUsersResponse>(StatusCodes.Status200OK)
+        .Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)
+        .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
     }
+
 }

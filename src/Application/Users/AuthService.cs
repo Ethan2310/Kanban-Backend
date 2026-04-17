@@ -1,5 +1,6 @@
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
+using Application.Common.Models;
 
 using Domain.Entities;
 using Domain.Enumerations;
@@ -18,6 +19,7 @@ public class AuthService
     private readonly IJwtTokenGenerator _jwt;
     private readonly IValidator<RegisterRequest> _registerValidator;
     private readonly IValidator<LoginRequest> _loginValidator;
+    private readonly IValidator<GetUsersRequest> _getUsersValidator;
     private readonly IValidator<DeleteUserRequest> _deleteUserValidator;
 
     public AuthService(
@@ -25,13 +27,15 @@ public class AuthService
         IJwtTokenGenerator jwt,
         IValidator<DeleteUserRequest> deleteUserValidator,
         IValidator<RegisterRequest> registerValidator,
-        IValidator<LoginRequest> loginValidator)
+        IValidator<LoginRequest> loginValidator,
+        IValidator<GetUsersRequest> getUsersValidator)
     {
         _context = context;
         _jwt = jwt;
         _deleteUserValidator = deleteUserValidator;
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
+        _getUsersValidator = getUsersValidator;
     }
 
     public async Task<RegisterResponse> RegisterAsync(RegisterRequest request, CancellationToken ct)
@@ -115,4 +119,44 @@ public class AuthService
 
         return new DeleteUserResponse(true);
     }
+
+    public async Task<GetUsersResponse> GetUsersAsync(GetUsersRequest request, CancellationToken ct)
+    {
+        var validation = await _getUsersValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+            throw new ValidationException(validation.Errors);
+
+        var query = _context.Users
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(request.FirstName))
+            query = query.Where(u => u.FirstName.Contains(request.FirstName));
+
+        if (!string.IsNullOrEmpty(request.LastName))
+            query = query.Where(u => u.LastName.Contains(request.LastName));
+
+        if (!string.IsNullOrEmpty(request.Email))
+            query = query.Where(u => u.Email.Contains(request.Email));
+
+        var totalCount = await query.CountAsync(ct);
+
+        var users = await query
+            .OrderBy(u => u.Id)
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .Select(u => new UserSummaryResponse(
+                u.Id,
+                u.Email,
+                u.FirstName,
+                u.LastName,
+                u.Role.ToString(),
+                u.IsVerified))
+            .ToListAsync(ct);
+
+        return new GetUsersResponse(
+            users,
+            new PaginationMetadata(request.PageNumber, request.PageSize, totalCount));
+    }
+
 }
