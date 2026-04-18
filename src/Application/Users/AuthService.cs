@@ -114,7 +114,7 @@ public class AuthService
 
         var userToDelete = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == userId, ct) ?? throw new NotFoundException(userId.ToString(), userId);
-        _context.Users.Remove(userToDelete);
+        userToDelete.IsActive = false;
         await _context.SaveChangesAsync(ct);
 
         return new DeleteUserResponse(true);
