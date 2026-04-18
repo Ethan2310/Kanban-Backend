@@ -1,4 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
 using Application.Boards;
+using Application.Common.Exceptions;
 
 using Microsoft.AspNetCore.Http;
 
@@ -14,9 +18,15 @@ public static class BoardEndpoints
             .WithTags("Boards")
             .RequireAuthorization();
 
-        group.MapPost("", async (CreateBoardRequest req, BoardService boardService, CancellationToken ct) =>
+        group.MapPost("", async (CreateBoardRequest req, HttpContext http, BoardService boardService, CancellationToken ct) =>
             {
-                var result = await boardService.CreateBoardAsync(req, ct);
+                var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    throw new UnauthorizedException("Invalid or missing user identity.");
+
+                var result = await boardService.CreateBoardAsync(req, currentUserId, ct);
                 return Results.Created($"/api/boards/{result.BoardId}", result);
             })
             .WithName("CreateBoard")

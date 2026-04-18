@@ -21,14 +21,14 @@ public class BoardService
         _createBoardValidator = createBoardValidator;
     }
 
-    public async Task<CreateBoardResponse> CreateBoardAsync(CreateBoardRequest request, CancellationToken ct)
+    public async Task<CreateBoardResponse> CreateBoardAsync(CreateBoardRequest request, int currentUserId, CancellationToken ct)
     {
         var validation = await _createBoardValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
 
         var addedByUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == request.AdminId, ct);
+            .FirstOrDefaultAsync(u => u.Id == currentUserId, ct);
 
         if (addedByUser is null || addedByUser.Role != Domain.Enumerations.UserRole.Admin)
             throw new UnauthorizedException("You do not have permission to create boards.");
@@ -37,7 +37,7 @@ public class BoardService
         {
             Name = request.Name,
             Description = request.Description,
-            CreatedById = request.AdminId,
+            CreatedById = currentUserId,
             CreatedOn = DateTime.UtcNow
         };
 
