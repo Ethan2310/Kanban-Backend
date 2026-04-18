@@ -144,5 +144,6 @@ app.UseAuthorization();
 AuthEndpoints.Map(app);
 UserEndpoints.Map(app);
 BoardEndpoints.Map(app);
+ProjectEndpoints.Map(app);
 
 app.Run();
