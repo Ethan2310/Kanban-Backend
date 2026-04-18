@@ -135,27 +135,80 @@
         }
       }
     },
+    "/api/boards": {
+      "post": {
+        "tags": [
+          "Boards"
+        ],
+        "summary": "Create a new board",
+        "description": "Creates a new board with the specified name and description.",
+        "operationId": "CreateBoard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBoardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBoardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users/{userId}": {
       "delete": {
         "tags": [
           "Users"
         ],
         "summary": "Delete a user",
-        "description": "Only administrators can delete users. The userId is specified in the path, and adminId must be provided as a query parameter.",
+        "description": "Only administrators can delete users. The userId is specified in the path and the caller is resolved from the JWT token.",
         "operationId": "DeleteUser",
         "parameters": [
           {
             "name": "userId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "adminId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "integer",
@@ -226,7 +279,7 @@
           "Users"
         ],
         "summary": "Search for users",
-        "description": "Search for users by first name, last name, or email with pagination support via pageNumber and pageSize query parameters.",
+        "description": "Search for users by first name, last name, or email with pagination support. Only administrators can call this endpoint, validated from the JWT token.",
         "operationId": "SearchUsers",
         "parameters": [
           {
@@ -366,6 +419,36 @@
           },
           "role": {
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateBoardRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateBoardResponse": {
+        "type": "object",
+        "properties": {
+          "boardId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
