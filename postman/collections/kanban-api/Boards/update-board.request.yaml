@@ -1,0 +1,17 @@
+$kind: http-request
+name: Update Board
+method: PUT
+url: '{{baseUrl}}/api/boards/{boardId}'
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: json
+  content: |-
+    {
+      "boardId": 1,
+      "name": "Example Name",
+      "description": "Example description"
+    }

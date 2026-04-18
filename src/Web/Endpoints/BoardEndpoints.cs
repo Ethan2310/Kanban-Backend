@@ -92,7 +92,7 @@ public static class BoardEndpoints
         .Produces<ApiErrorResponse>(StatusCodes.Status404NotFound)
         .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("", async (GetBoardsRequest req, HttpContext http, BoardService boardService, CancellationToken ct) =>
+        group.MapGet("", async ([AsParameters] GetBoardsRequest req, HttpContext http, BoardService boardService, CancellationToken ct) =>
         {
             var result = await boardService.GetBoardsAsync(req, ct);
             return Results.Ok(result);
