@@ -1,3 +1,7 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+using Application.Common.Exceptions;
 using Application.Common.Models;
 using Application.Users;
 
@@ -16,16 +20,22 @@ public static class UserEndpoints
             .RequireAuthorization();
 
         group.MapDelete("/{userId}",
-            async (int userId, int adminId, AuthService auth, CancellationToken ct) =>
+            async (int userId, HttpContext http, AuthService auth, CancellationToken ct) =>
             {
-                var result = await auth.DeleteUserAsync(adminId, userId, ct);
+                var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    throw new UnauthorizedException("Invalid or missing user identity.");
+
+                await auth.DeleteUserAsync(currentUserId, userId, ct);
                 return Results.NoContent();
             })
             .WithName("DeleteUser")
             .WithOpenApi(operation =>
             {
                 operation.Summary = "Delete a user";
-                operation.Description = "Only administrators can delete users. The userId is specified in the path, and adminId must be provided as a query parameter.";
+                operation.Description = "Only administrators can delete users. The userId is specified in the path and the caller is resolved from the JWT token.";
                 return operation;
             })
             .Produces(StatusCodes.Status204NoContent)
@@ -39,20 +49,27 @@ public static class UserEndpoints
             string? firstName,
             string? lastName,
             string? email,
+            HttpContext http,
             AuthService auth,
             CancellationToken ct,
             int pageNumber = PaginationRequestDefaults.PageNumber,
             int pageSize = PaginationRequestDefaults.PageSize) =>
         {
+            var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+                throw new UnauthorizedException("Invalid or missing user identity.");
+
             var request = new GetUsersRequest(firstName, lastName, email, pageNumber, pageSize);
-            var result = await auth.GetUsersAsync(request, ct);
+            var result = await auth.GetUsersAsync(request, currentUserId, ct);
             return Results.Ok(result);
         })
         .WithName("SearchUsers")
         .WithOpenApi(operation =>
         {
             operation.Summary = "Search for users";
-            operation.Description = "Search for users by first name, last name, or email with pagination support via pageNumber and pageSize query parameters.";
+            operation.Description = "Search for users by first name, last name, or email with pagination support. Only administrators can call this endpoint, validated from the JWT token.";
             return operation;
         })
         .Produces<GetUsersResponse>(StatusCodes.Status200OK)

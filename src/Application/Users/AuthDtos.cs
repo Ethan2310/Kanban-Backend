@@ -31,7 +31,7 @@ public record AuthResponse(
     string LastName,
     string Role);
 
-public record DeleteUserRequest(int AdminID, int UserID);
+public record DeleteUserRequest(int UserID);
 
 public record DeleteUserResponse(bool Success);
 

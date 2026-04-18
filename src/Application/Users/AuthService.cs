@@ -100,14 +100,14 @@ public class AuthService
         return new AuthResponse(token, user.Id, user.Email, user.FirstName, user.LastName, user.Role.ToString());
     }
 
-    public async Task<DeleteUserResponse> DeleteUserAsync(int adminId, int userId, CancellationToken ct)
+    public async Task<DeleteUserResponse> DeleteUserAsync(int currentUserId, int userId, CancellationToken ct)
     {
-        var validation = await _deleteUserValidator.ValidateAsync(new DeleteUserRequest(adminId, userId), ct);
+        var validation = await _deleteUserValidator.ValidateAsync(new DeleteUserRequest(userId), ct);
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
 
         var adminUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == adminId, ct);
+            .FirstOrDefaultAsync(u => u.Id == currentUserId, ct);
 
         if (adminUser is null || adminUser.Role != UserRole.Admin)
             throw new UnauthorizedException("You do not have permission to delete users.");
@@ -120,11 +120,17 @@ public class AuthService
         return new DeleteUserResponse(true);
     }
 
-    public async Task<GetUsersResponse> GetUsersAsync(GetUsersRequest request, CancellationToken ct)
+    public async Task<GetUsersResponse> GetUsersAsync(GetUsersRequest request, int currentUserId, CancellationToken ct)
     {
         var validation = await _getUsersValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
+
+        var currentUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == currentUserId, ct);
+
+        if (currentUser is null || currentUser.Role != UserRole.Admin)
+            throw new UnauthorizedException("You do not have permission to view users.");
 
         var query = _context.Users
             .AsNoTracking()
