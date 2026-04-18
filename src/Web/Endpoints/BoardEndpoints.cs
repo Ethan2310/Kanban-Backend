@@ -40,5 +40,73 @@ public static class BoardEndpoints
             .Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)
             .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
             .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
+
+        group.MapPut("/{boardId}", async (int boardId, UpdateBoardRequest req, HttpContext http, BoardService boardService, CancellationToken ct) =>
+        {
+            var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+                throw new UnauthorizedException("Invalid or missing user identity.");
+
+            var updateReq = req with { BoardId = boardId };
+            var result = await boardService.UpdateBoardAsync(updateReq, currentUserId, ct);
+            return Results.Ok(result);
+        })
+        .WithName("UpdateBoard")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Update an existing board";
+            operation.Description = "Updates the name and description of an existing board.";
+            return operation;
+        })
+        .Produces<UpdateBoardResponse>(StatusCodes.Status200OK)
+        .Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)
+        .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ApiErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
+
+
+        group.MapDelete("/{boardId}", async (int boardId, HttpContext http, BoardService boardService, CancellationToken ct) =>
+        {
+            var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+                throw new UnauthorizedException("Invalid or missing user identity.");
+
+            var deleteReq = new DeleteBoardRequest(boardId);
+            var result = await boardService.DeleteBoardAsync(deleteReq, currentUserId, ct);
+            return Results.Ok(result);
+        })
+        .WithName("DeleteBoard")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Delete a board";
+            operation.Description = "Deletes an existing board by its ID.";
+            return operation;
+        })
+        .Produces<DeleteBoardResponse>(StatusCodes.Status200OK)
+        .Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)
+        .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ApiErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("", async ([AsParameters] GetBoardsRequest req, HttpContext http, BoardService boardService, CancellationToken ct) =>
+        {
+            var result = await boardService.GetBoardsAsync(req, ct);
+            return Results.Ok(result);
+        })
+        .WithName("GetBoards")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get a list of boards";
+            operation.Description = "Retrieves a paginated list of boards, optionally filtered by project ID and name.";
+            return operation;
+        })
+        .Produces<GetBoardsResponse>(StatusCodes.Status200OK)
+        .Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)
+        .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
     }
 }

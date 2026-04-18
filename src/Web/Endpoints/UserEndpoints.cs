@@ -46,14 +46,10 @@ public static class UserEndpoints
             .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
 
         group.MapGet("/search", async (
-            string? firstName,
-            string? lastName,
-            string? email,
+           [AsParameters] GetUsersRequest request,
             HttpContext http,
             AuthService auth,
-            CancellationToken ct,
-            int pageNumber = PaginationRequestDefaults.PageNumber,
-            int pageSize = PaginationRequestDefaults.PageSize) =>
+            CancellationToken ct) =>
         {
             var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
@@ -61,7 +57,6 @@ public static class UserEndpoints
             if (!int.TryParse(userIdClaim, out var currentUserId))
                 throw new UnauthorizedException("Invalid or missing user identity.");
 
-            var request = new GetUsersRequest(firstName, lastName, email, pageNumber, pageSize);
             var result = await auth.GetUsersAsync(request, currentUserId, ct);
             return Results.Ok(result);
         })

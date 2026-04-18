@@ -1,0 +1,7 @@
+$kind: http-request
+name: Delete Board
+method: DELETE
+url: '{{baseUrl}}/api/boards/{boardId}'
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
