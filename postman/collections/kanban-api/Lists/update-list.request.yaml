@@ -1,0 +1,16 @@
+$kind: http-request
+name: Update List
+method: PATCH
+url: '{{baseUrl}}/api/lists/{listId}'
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: json
+  content: |-
+    {
+      "name": "Example Name",
+      "statusId": 1
+    }

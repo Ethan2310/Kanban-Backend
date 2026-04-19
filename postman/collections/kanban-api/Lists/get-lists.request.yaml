@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get Lists
+method: GET
+url: '{{baseUrl}}/api/lists'
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'

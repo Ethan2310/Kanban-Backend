@@ -78,6 +78,9 @@ public class StatusService
         if (request.Color != null)
             status.Color = new HexColor(request.Color);
 
+        status.UpdatedById = currentUserId;
+        status.UpdatedOn = DateTime.UtcNow;
+
         await _context.SaveChangesAsync(ct);
 
         return new UpdateStatusResponse(status.Id, status.Name, status.OrderIndex, RequireColor(status));
