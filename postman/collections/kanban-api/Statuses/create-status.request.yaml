@@ -1,0 +1,17 @@
+$kind: http-request
+name: Create Status
+method: POST
+url: '{{baseUrl}}/api/statuses'
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: json
+  content: |-
+    {
+      "name": "Example Name",
+      "orderIndex": 0,
+      "color": "#FFFFFF"
+    }
