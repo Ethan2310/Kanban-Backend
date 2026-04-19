@@ -107,7 +107,7 @@ public class AuthService
         await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "delete", "users", ct);
 
         var userToDelete = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == userId, ct) ?? throw new NotFoundException(userId.ToString(), userId);
+            .FirstOrDefaultAsync(u => u.Id == userId, ct) ?? throw new NotFoundException("User", userId);
         userToDelete.IsActive = false;
         await _context.SaveChangesAsync(ct);
 
