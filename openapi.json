@@ -283,12 +283,12 @@
       }
     },
     "/api/boards/{boardId}": {
-      "put": {
+      "patch": {
         "tags": [
           "Boards"
         ],
         "summary": "Update an existing board",
-        "description": "Updates the name and description of an existing board.",
+        "description": "Partially updates a board. Only fields included in the request body are applied.",
         "operationId": "UpdateBoard",
         "parameters": [
           {
@@ -592,12 +592,12 @@
       }
     },
     "/api/projects/{projectId}": {
-      "put": {
+      "patch": {
         "tags": [
           "Projects"
         ],
         "summary": "Update an existing project",
-        "description": "Updates the name and description of an existing project.",
+        "description": "Partially updates a project. Only fields included in the request body are applied.",
         "operationId": "UpdateProject",
         "parameters": [
           {
@@ -643,6 +643,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -868,12 +878,12 @@
       }
     },
     "/api/statuses/{statusId}": {
-      "put": {
+      "patch": {
         "tags": [
           "Statuses"
         ],
         "summary": "Update an existing status",
-        "description": "Updates an existing status with the specified name, order index, and color. Color must be a hex value in the format #RRGGBB.",
+        "description": "Partially updates a status. Only fields included in the request body are applied. Color must be a hex value in the format #RRGGBB.",
         "operationId": "UpdateStatus",
         "parameters": [
           {
@@ -1563,12 +1573,9 @@
       "UpdateBoardRequest": {
         "type": "object",
         "properties": {
-          "boardId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "name": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "description": {
             "type": "string",
@@ -1597,12 +1604,9 @@
       "UpdateProjectRequest": {
         "type": "object",
         "properties": {
-          "projectId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "name": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "description": {
             "type": "string",
@@ -1632,16 +1636,19 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "orderIndex": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "color": {
             "maxLength": 7,
             "minLength": 7,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

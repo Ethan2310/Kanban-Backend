@@ -39,7 +39,7 @@ public static class StatusEndpoints
             .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
             .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
 
-        group.MapPut("/{statusId}", async (int statusId, UpdateStatusRequest req, HttpContext http, StatusService statusService, CancellationToken ct) =>
+        group.MapPatch("/{statusId}", async (int statusId, UpdateStatusRequest req, HttpContext http, StatusService statusService, CancellationToken ct) =>
         {
             var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
@@ -54,7 +54,7 @@ public static class StatusEndpoints
             .WithOpenApi(operation =>
             {
                 operation.Summary = "Update an existing status";
-                operation.Description = "Updates an existing status with the specified name, order index, and color. Color must be a hex value in the format #RRGGBB.";
+                operation.Description = "Partially updates a status. Only fields included in the request body are applied. Color must be a hex value in the format #RRGGBB.";
                 return operation;
             })
             .Produces<UpdateStatusResponse>(StatusCodes.Status200OK)

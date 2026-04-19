@@ -10,8 +10,7 @@ public record CreateProjectResponse(
     string? Description);
 
 public record UpdateProjectRequest(
-    int ProjectId,
-    string Name,
+    string? Name,
     string? Description);
 
 public record UpdateProjectResponse(

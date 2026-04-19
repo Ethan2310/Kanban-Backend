@@ -12,8 +12,7 @@ public record CreateBoardResponse(
     string? Description);
 
 public record UpdateBoardRequest(
-    int BoardId,
-    string Name,
+    string? Name,
     string? Description);
 
 public record UpdateBoardResponse(

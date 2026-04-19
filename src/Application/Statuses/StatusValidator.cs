@@ -27,16 +27,19 @@ public class UpdateStatusRequestValidator : AbstractValidator<UpdateStatusReques
     {
         RuleFor(x => x.Name)
             .NotEmpty()
-            .MaximumLength(100);
+            .MaximumLength(100)
+            .When(x => x.Name != null);
 
         RuleFor(x => x.OrderIndex)
-            .GreaterThanOrEqualTo(0);
+            .GreaterThanOrEqualTo(0)
+            .When(x => x.OrderIndex.HasValue);
 
         RuleFor(x => x.Color)
             .NotEmpty()
             .Length(7)
             .Matches("^#[0-9A-Fa-f]{6}$")
-            .WithMessage("Color must be a valid hex color in the format #RRGGBB.");
+            .WithMessage("Color must be a valid hex color in the format #RRGGBB.")
+            .When(x => x.Color != null);
     }
 }
 
