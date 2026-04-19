@@ -1,0 +1,7 @@
+$kind: http-request
+name: Delete List
+method: DELETE
+url: '{{baseUrl}}/api/lists/{listId}'
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
