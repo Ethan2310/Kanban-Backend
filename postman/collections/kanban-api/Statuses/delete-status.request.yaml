@@ -1,0 +1,7 @@
+$kind: http-request
+name: Delete Status
+method: DELETE
+url: '{{baseUrl}}/api/statuses/{statusId}'
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'

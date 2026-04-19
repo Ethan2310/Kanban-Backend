@@ -68,7 +68,7 @@ public class BoardService
         await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "update", "boards", ct);
 
         var board = await _context.Boards
-            .FirstOrDefaultAsync(b => b.Id == request.BoardId, ct) ?? throw new NotFoundException(request.BoardId.ToString(), request.BoardId);
+            .FirstOrDefaultAsync(b => b.Id == request.BoardId, ct) ?? throw new NotFoundException("Board", request.BoardId);
 
         board.UpdatedById = currentUserId;
         board.UpdatedOn = DateTime.UtcNow;
@@ -89,7 +89,7 @@ public class BoardService
         await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "delete", "boards", ct);
 
         var board = await _context.Boards
-            .FirstOrDefaultAsync(b => b.Id == request.BoardID, ct) ?? throw new NotFoundException(request.BoardID.ToString(), request.BoardID);
+            .FirstOrDefaultAsync(b => b.Id == request.BoardID, ct) ?? throw new NotFoundException("Board", request.BoardID);
 
         board.IsActive = false;
         await _context.SaveChangesAsync(ct);

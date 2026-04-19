@@ -68,7 +68,7 @@ public class ProjectService
 
         var project = await _context.Projects
             .FirstOrDefaultAsync(p => p.Id == request.ProjectId, ct)
-            ?? throw new NotFoundException(request.ProjectId.ToString(), request.ProjectId);
+            ?? throw new NotFoundException("Project", request.ProjectId);
 
         project.Name = request.Name;
         project.Description = request.Description;
@@ -90,7 +90,7 @@ public class ProjectService
 
         var project = await _context.Projects
             .FirstOrDefaultAsync(p => p.Id == request.ProjectId, ct)
-            ?? throw new NotFoundException(request.ProjectId.ToString(), request.ProjectId);
+            ?? throw new NotFoundException("Project", request.ProjectId);
 
         project.IsActive = false;
         await _context.SaveChangesAsync(ct);
