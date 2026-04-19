@@ -39,7 +39,7 @@ public static class ProjectEndpoints
             .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
             .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
 
-        group.MapPut("/{projectId}", async (int projectId, UpdateProjectRequest req, HttpContext http, ProjectService projectService, CancellationToken ct) =>
+        group.MapPatch("/{projectId}", async (int projectId, UpdateProjectRequest req, HttpContext http, ProjectService projectService, CancellationToken ct) =>
         {
             var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
@@ -47,20 +47,20 @@ public static class ProjectEndpoints
             if (!int.TryParse(userIdClaim, out var currentUserId))
                 throw new UnauthorizedException("Invalid or missing user identity.");
 
-            var updateReq = req with { ProjectId = projectId };
-            var result = await projectService.UpdateProjectAsync(updateReq, currentUserId, ct);
+            var result = await projectService.UpdateProjectAsync(projectId, req, currentUserId, ct);
             return Results.Ok(result);
         })
             .WithName("UpdateProject")
             .WithOpenApi(operation =>
             {
                 operation.Summary = "Update an existing project";
-                operation.Description = "Updates the name and description of an existing project.";
+                operation.Description = "Partially updates a project. Only fields included in the request body are applied.";
                 return operation;
             })
             .Produces<UpdateProjectResponse>(StatusCodes.Status200OK)
             .Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)
             .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
+            .Produces<ApiErrorResponse>(StatusCodes.Status404NotFound)
             .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
 
         group.MapDelete("/{projectId}", async (int projectId, HttpContext http, ProjectService projectService, CancellationToken ct) =>

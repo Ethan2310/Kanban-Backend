@@ -71,9 +71,12 @@ public class StatusService
         var status = await _context.Statuses.FindAsync(new object[] { statusId }, ct)
             ?? throw new NotFoundException("Status", statusId);
 
-        status.Name = request.Name;
-        status.OrderIndex = request.OrderIndex;
-        status.Color = new HexColor(request.Color);
+        if (request.Name != null)
+            status.Name = request.Name;
+        if (request.OrderIndex.HasValue)
+            status.OrderIndex = request.OrderIndex.Value;
+        if (request.Color != null)
+            status.Color = new HexColor(request.Color);
 
         await _context.SaveChangesAsync(ct);
 

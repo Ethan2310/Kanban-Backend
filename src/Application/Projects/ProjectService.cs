@@ -58,7 +58,7 @@ public class ProjectService
         return new CreateProjectResponse(project.Id, project.Name, project.Description);
     }
 
-    public async Task<UpdateProjectResponse> UpdateProjectAsync(UpdateProjectRequest request, int currentUserId, CancellationToken ct)
+    public async Task<UpdateProjectResponse> UpdateProjectAsync(int projectId, UpdateProjectRequest request, int currentUserId, CancellationToken ct)
     {
         var validation = await _updateProjectValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
@@ -67,11 +67,13 @@ public class ProjectService
         await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "update", "projects", ct);
 
         var project = await _context.Projects
-            .FirstOrDefaultAsync(p => p.Id == request.ProjectId, ct)
-            ?? throw new NotFoundException("Project", request.ProjectId);
+            .FirstOrDefaultAsync(p => p.Id == projectId, ct)
+            ?? throw new NotFoundException("Project", projectId);
 
-        project.Name = request.Name;
-        project.Description = request.Description;
+        if (request.Name != null)
+            project.Name = request.Name;
+        if (request.Description != null)
+            project.Description = request.Description;
         project.UpdatedById = currentUserId;
         project.UpdatedOn = DateTime.UtcNow;
 

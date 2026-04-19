@@ -20,11 +20,11 @@ public record CreateStatusResponse(
     string Color);
 
 public record UpdateStatusRequest(
-    string Name,
-    int OrderIndex,
+    string? Name,
+    int? OrderIndex,
     [property: StringLength(7, MinimumLength = 7)]
     [property: Description("Hex color in the format #RRGGBB.")]
-    string Color);
+    string? Color);
 
 public record UpdateStatusResponse(
     int StatusId,

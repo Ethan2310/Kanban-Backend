@@ -1,6 +1,6 @@
 $kind: http-request
 name: Update Board
-method: PUT
+method: PATCH
 url: '{{baseUrl}}/api/boards/{boardId}'
 headers:
   - key: Content-Type
@@ -11,7 +11,6 @@ body:
   type: json
   content: |-
     {
-      "boardId": 1,
       "name": "Example Name",
       "description": "Example description"
     }

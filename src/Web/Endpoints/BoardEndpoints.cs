@@ -41,7 +41,7 @@ public static class BoardEndpoints
             .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
             .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
 
-        group.MapPut("/{boardId}", async (int boardId, UpdateBoardRequest req, HttpContext http, BoardService boardService, CancellationToken ct) =>
+        group.MapPatch("/{boardId}", async (int boardId, UpdateBoardRequest req, HttpContext http, BoardService boardService, CancellationToken ct) =>
         {
             var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
@@ -49,15 +49,14 @@ public static class BoardEndpoints
             if (!int.TryParse(userIdClaim, out var currentUserId))
                 throw new UnauthorizedException("Invalid or missing user identity.");
 
-            var updateReq = req with { BoardId = boardId };
-            var result = await boardService.UpdateBoardAsync(updateReq, currentUserId, ct);
+            var result = await boardService.UpdateBoardAsync(boardId, req, currentUserId, ct);
             return Results.Ok(result);
         })
         .WithName("UpdateBoard")
         .WithOpenApi(operation =>
         {
             operation.Summary = "Update an existing board";
-            operation.Description = "Updates the name and description of an existing board.";
+            operation.Description = "Partially updates a board. Only fields included in the request body are applied.";
             return operation;
         })
         .Produces<UpdateBoardResponse>(StatusCodes.Status200OK)

@@ -19,15 +19,14 @@ public class UpdateProjectRequestValidator : AbstractValidator<UpdateProjectRequ
 {
     public UpdateProjectRequestValidator()
     {
-        RuleFor(x => x.ProjectId)
-            .GreaterThan(0);
-
         RuleFor(x => x.Name)
             .NotEmpty()
-            .MaximumLength(150);
+            .MaximumLength(150)
+            .When(x => x.Name != null);
 
         RuleFor(x => x.Description)
-            .MaximumLength(1000);
+            .MaximumLength(1000)
+            .When(x => x.Description != null);
     }
 }
 

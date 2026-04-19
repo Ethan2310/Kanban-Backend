@@ -59,7 +59,7 @@ public class BoardService
         return new CreateBoardResponse(board.Id, board.Name, board.Description);
     }
 
-    public async Task<UpdateBoardResponse> UpdateBoardAsync(UpdateBoardRequest request, int currentUserId, CancellationToken ct)
+    public async Task<UpdateBoardResponse> UpdateBoardAsync(int boardId, UpdateBoardRequest request, int currentUserId, CancellationToken ct)
     {
         var validation = await _updateBoardValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
@@ -68,12 +68,15 @@ public class BoardService
         await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "update", "boards", ct);
 
         var board = await _context.Boards
-            .FirstOrDefaultAsync(b => b.Id == request.BoardId, ct) ?? throw new NotFoundException("Board", request.BoardId);
+            .FirstOrDefaultAsync(b => b.Id == boardId, ct) ?? throw new NotFoundException("Board", boardId);
 
         board.UpdatedById = currentUserId;
         board.UpdatedOn = DateTime.UtcNow;
-        board.Name = request.Name;
-        board.Description = request.Description;
+
+        if (request.Name != null)
+            board.Name = request.Name;
+        if (request.Description != null)
+            board.Description = request.Description;
 
         await _context.SaveChangesAsync(ct);
 

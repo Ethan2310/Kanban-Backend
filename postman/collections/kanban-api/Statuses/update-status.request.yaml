@@ -1,6 +1,6 @@
 $kind: http-request
 name: Update Status
-method: PUT
+method: PATCH
 url: '{{baseUrl}}/api/statuses/{statusId}'
 headers:
   - key: Content-Type
