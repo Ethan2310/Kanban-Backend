@@ -3,7 +3,6 @@ using Application.Common.Interfaces;
 using Application.Common.Models;
 
 using Domain.Entities;
-using Domain.Enumerations;
 
 using FluentValidation;
 
@@ -16,6 +15,7 @@ namespace Application.Users;
 public class AuthService
 {
     private readonly IApplicationDbContext _context;
+    private readonly IAdminAuthorizationService _adminAuthorizationService;
     private readonly IJwtTokenGenerator _jwt;
     private readonly IValidator<RegisterRequest> _registerValidator;
     private readonly IValidator<LoginRequest> _loginValidator;
@@ -24,6 +24,7 @@ public class AuthService
 
     public AuthService(
         IApplicationDbContext context,
+        IAdminAuthorizationService adminAuthorizationService,
         IJwtTokenGenerator jwt,
         IValidator<DeleteUserRequest> deleteUserValidator,
         IValidator<RegisterRequest> registerValidator,
@@ -31,6 +32,7 @@ public class AuthService
         IValidator<GetUsersRequest> getUsersValidator)
     {
         _context = context;
+        _adminAuthorizationService = adminAuthorizationService;
         _jwt = jwt;
         _deleteUserValidator = deleteUserValidator;
         _registerValidator = registerValidator;
@@ -55,11 +57,7 @@ public class AuthService
 
         if (request.AddedById.HasValue)
         {
-            var addedByUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == request.AddedById.Value, ct);
-
-            if (addedByUser is null || addedByUser.Role != Domain.Enumerations.UserRole.Admin)
-                throw new UnauthorizedException("You do not have permission to register users.");
+            await _adminAuthorizationService.EnsureAdminUserAsync(request.AddedById.Value, "register", "users", ct);
 
             createdById = request.AddedById.Value;
         }
@@ -106,11 +104,7 @@ public class AuthService
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
 
-        var adminUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == currentUserId, ct);
-
-        if (adminUser is null || adminUser.Role != UserRole.Admin)
-            throw new UnauthorizedException("You do not have permission to delete users.");
+        await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "delete", "users", ct);
 
         var userToDelete = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == userId, ct) ?? throw new NotFoundException(userId.ToString(), userId);
@@ -126,11 +120,7 @@ public class AuthService
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
 
-        var currentUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == currentUserId, ct);
-
-        if (currentUser is null || currentUser.Role != UserRole.Admin)
-            throw new UnauthorizedException("You do not have permission to view users.");
+        await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "view", "users", ct);
 
         var query = _context.Users
             .AsNoTracking()

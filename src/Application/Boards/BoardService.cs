@@ -14,6 +14,7 @@ namespace Application.Boards;
 public class BoardService
 {
     private readonly IApplicationDbContext _context;
+    private readonly IAdminAuthorizationService _adminAuthorizationService;
     private readonly IValidator<CreateBoardRequest> _createBoardValidator;
 
     private readonly IValidator<UpdateBoardRequest> _updateBoardValidator;
@@ -22,12 +23,14 @@ public class BoardService
 
     public BoardService(
         IApplicationDbContext context,
+        IAdminAuthorizationService adminAuthorizationService,
         IValidator<CreateBoardRequest> createBoardValidator,
         IValidator<UpdateBoardRequest> updateBoardValidator,
         IValidator<DeleteBoardRequest> deleteBoardValidator,
         IValidator<GetBoardsRequest> getBoardsValidator)
     {
         _context = context;
+        _adminAuthorizationService = adminAuthorizationService;
         _createBoardValidator = createBoardValidator;
         _updateBoardValidator = updateBoardValidator;
         _deleteBoardValidator = deleteBoardValidator;
@@ -40,11 +43,7 @@ public class BoardService
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
 
-        var addedByUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == currentUserId, ct);
-
-        if (addedByUser is null || addedByUser.Role != Domain.Enumerations.UserRole.Admin)
-            throw new UnauthorizedException("You do not have permission to create boards.");
+        await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "create", "boards", ct);
 
         var board = new Domain.Entities.Board
         {
@@ -66,11 +65,7 @@ public class BoardService
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
 
-        var currentUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == currentUserId, ct);
-
-        if (currentUser is null || currentUser.Role != Domain.Enumerations.UserRole.Admin)
-            throw new UnauthorizedException("You do not have permission to update boards.");
+        await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "update", "boards", ct);
 
         var board = await _context.Boards
             .FirstOrDefaultAsync(b => b.Id == request.BoardId, ct) ?? throw new NotFoundException(request.BoardId.ToString(), request.BoardId);
@@ -91,11 +86,7 @@ public class BoardService
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
 
-        var currentUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == currentUserId, ct);
-
-        if (currentUser is null || currentUser.Role != Domain.Enumerations.UserRole.Admin)
-            throw new UnauthorizedException("You do not have permission to delete boards.");
+        await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "delete", "boards", ct);
 
         var board = await _context.Boards
             .FirstOrDefaultAsync(b => b.Id == request.BoardID, ct) ?? throw new NotFoundException(request.BoardID.ToString(), request.BoardID);

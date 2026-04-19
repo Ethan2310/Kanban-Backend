@@ -1,6 +1,8 @@
 using System.Reflection;
 
 using Application.Boards;
+using Application.Common.Interfaces;
+using Application.Common.Services;
 using Application.Lists;
 using Application.Projects;
 using Application.Statuses;
@@ -18,6 +20,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        services.AddScoped<IAdminAuthorizationService, AdminAuthorizationService>();
         services.AddScoped<TaskService>();
         services.AddScoped<BoardService>();
         services.AddScoped<ListService>();
