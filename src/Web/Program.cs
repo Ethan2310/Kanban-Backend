@@ -147,5 +147,6 @@ BoardEndpoints.Map(app);
 ProjectEndpoints.Map(app);
 StatusEndpoints.Map(app);
 ListEndpoints.Map(app);
+TaskEndpoints.Map(app);
 
 app.Run();
