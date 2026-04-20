@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get Tasks
+method: GET
+url: '{{baseUrl}}/api/tasks'
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
