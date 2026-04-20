@@ -1,0 +1,7 @@
+$kind: http-request
+name: Delete Task
+method: DELETE
+url: '{{baseUrl}}/api/tasks/{taskId}'
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'

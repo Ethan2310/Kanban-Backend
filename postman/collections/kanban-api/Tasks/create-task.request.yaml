@@ -1,0 +1,23 @@
+$kind: http-request
+name: Create Task
+method: POST
+url: '{{baseUrl}}/api/tasks'
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: json
+  content: |-
+    {
+      "title": "Example Title",
+      "description": "Example description",
+      "boardId": 1,
+      "listId": 1,
+      "statusId": 1,
+      "assignedUserId": 1,
+      "orderIndex": 0,
+      "priority": "Low",
+      "dueDate": "2024-01-01T00:00:00Z"
+    }
