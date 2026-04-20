@@ -60,3 +60,10 @@ public record UserSummaryResponse(
 public record GetUsersInProjectResponse(
     IReadOnlyList<UserSummaryResponse> Users,
     PaginationMetadata Pagination);
+
+public record RemoveUserFromProjectRequest(
+    int ProjectId,
+    int UserId);
+
+public record RemoveUserFromProjectResponse(
+    bool Success);

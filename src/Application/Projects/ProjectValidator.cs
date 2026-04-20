@@ -88,3 +88,15 @@ public class GetUsersInProjectRequestValidator : AbstractValidator<GetUsersInPro
             .LessThanOrEqualTo(100);
     }
 }
+
+public class RemoveUserFromProjectRequestValidator : AbstractValidator<RemoveUserFromProjectRequest>
+{
+    public RemoveUserFromProjectRequestValidator()
+    {
+        RuleFor(x => x.ProjectId)
+            .GreaterThan(0);
+
+        RuleFor(x => x.UserId)
+            .GreaterThan(0);
+    }
+}

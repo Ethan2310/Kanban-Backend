@@ -165,6 +165,31 @@ public static class ProjectEndpoints
             .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
             .Produces<ApiErrorResponse>(StatusCodes.Status404NotFound)
             .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
+
+        group.MapDelete("/{projectId}/users/{userId}", async (int projectId, int userId, HttpContext http, ProjectService projectService, CancellationToken ct) =>
+        {
+            var userIdClaim = http.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? http.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+                throw new UnauthorizedException("Invalid or missing user identity.");
+
+            var request = new RemoveUserFromProjectRequest(projectId, userId);
+            var result = await projectService.RemoveUserFromProjectAsync(request, currentUserId, ct);
+            return Results.Ok(result);
+        })
+            .WithName("RemoveUserFromProject")
+            .WithOpenApi(operation =>
+            {
+                operation.Summary = "Remove user access from a project";
+                operation.Description = "Revokes a user's access to the specified project by deactivating the user-project access entry.";
+                return operation;
+            })
+            .Produces<RemoveUserFromProjectResponse>(StatusCodes.Status200OK)
+            .Produces<ApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<ApiErrorResponse>(StatusCodes.Status401Unauthorized)
+            .Produces<ApiErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<ApiErrorResponse>(StatusCodes.Status500InternalServerError);
     }
 }
 
