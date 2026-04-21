@@ -19,6 +19,9 @@ public class ProjectService
     private readonly IValidator<UpdateProjectRequest> _updateProjectValidator;
     private readonly IValidator<DeleteProjectRequest> _deleteProjectValidator;
     private readonly IValidator<GetProjectsRequest> _getProjectsValidator;
+    private readonly IValidator<AddUserToProjectRequest> _addUserToProjectValidator;
+    private readonly IValidator<GetUsersInProjectRequest> _getUsersInProjectValidator;
+    private readonly IValidator<RemoveUserFromProjectRequest> _removeUserFromProjectValidator;
 
     public ProjectService(
         IApplicationDbContext context,
@@ -26,7 +29,10 @@ public class ProjectService
         IValidator<CreateProjectRequest> createProjectValidator,
         IValidator<UpdateProjectRequest> updateProjectValidator,
         IValidator<DeleteProjectRequest> deleteProjectValidator,
-        IValidator<GetProjectsRequest> getProjectsValidator)
+        IValidator<GetProjectsRequest> getProjectsValidator,
+        IValidator<AddUserToProjectRequest> addUserToProjectValidator,
+        IValidator<GetUsersInProjectRequest> getUsersInProjectValidator,
+        IValidator<RemoveUserFromProjectRequest> removeUserFromProjectValidator)
     {
         _context = context;
         _adminAuthorizationService = adminAuthorizationService;
@@ -34,6 +40,9 @@ public class ProjectService
         _updateProjectValidator = updateProjectValidator;
         _deleteProjectValidator = deleteProjectValidator;
         _getProjectsValidator = getProjectsValidator;
+        _addUserToProjectValidator = addUserToProjectValidator;
+        _getUsersInProjectValidator = getUsersInProjectValidator;
+        _removeUserFromProjectValidator = removeUserFromProjectValidator;
     }
 
     public async Task<CreateProjectResponse> CreateProjectAsync(CreateProjectRequest request, int currentUserId, CancellationToken ct)
@@ -139,6 +148,95 @@ public class ProjectService
             .ToListAsync(ct);
 
         return new GetProjectsResponse(projects, new PaginationMetadata(request.PageNumber, request.PageSize, totalCount));
+    }
+
+    public async Task<AddUserToProjectResponse> AddUserToProjectAsync(AddUserToProjectRequest request, int currentUserId, CancellationToken ct)
+    {
+        var validation = await _addUserToProjectValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+            throw new ValidationException(validation.Errors);
+
+        await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "create", "user-project-access", ct);
+
+        var project = await _context.Projects
+            .Include(p => p.UserProjectAccesses)
+            .FirstOrDefaultAsync(p => p.Id == request.ProjectId && p.IsActive, ct)
+            ?? throw new NotFoundException("Project", request.ProjectId);
+
+        var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId && u.IsActive, ct);
+        if (!userExists)
+            throw new NotFoundException("User", request.UserId);
+
+        if (project.UserProjectAccesses.Any(upa => upa.IsActive && upa.UserId == request.UserId))
+            throw new BadRequestException($"User {request.UserId} already has access to project {request.ProjectId}.");
+
+        var userProjectAccess = new Domain.Entities.UserProjectAccess
+        {
+            ProjectId = request.ProjectId,
+            UserId = request.UserId,
+            CreatedById = currentUserId,
+            CreatedOn = DateTime.UtcNow
+        };
+
+        _context.UserProjectAccesses.Add(userProjectAccess);
+        await _context.SaveChangesAsync(ct);
+
+        return new AddUserToProjectResponse(request.ProjectId, request.UserId);
+    }
+
+    public async Task<GetUsersInProjectResponse> GetUsersInProjectAsync(GetUsersInProjectRequest request, int currentUserId, CancellationToken ct)
+    {
+        var validation = await _getUsersInProjectValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+            throw new ValidationException(validation.Errors);
+
+        await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "view", "user-project-access", ct);
+
+        var projectExists = await _context.Projects.AnyAsync(p => p.Id == request.ProjectId && p.IsActive, ct);
+        if (!projectExists)
+            throw new NotFoundException("Project", request.ProjectId);
+
+        var userAccessQuery = _context.UserProjectAccesses
+            .AsNoTracking()
+            .Where(upa => upa.IsActive && upa.ProjectId == request.ProjectId && upa.User.IsActive);
+
+        var totalCount = await userAccessQuery.CountAsync(ct);
+
+        var users = await userAccessQuery
+            .OrderBy(upa => upa.User.FirstName)
+            .ThenBy(upa => upa.User.LastName)
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .Select(upa => new UserSummaryResponse(upa.User.Id, upa.User.FirstName, upa.User.LastName, upa.User.Email))
+            .ToListAsync(ct);
+
+        return new GetUsersInProjectResponse(users, new PaginationMetadata(request.PageNumber, request.PageSize, totalCount));
+    }
+
+    public async Task<RemoveUserFromProjectResponse> RemoveUserFromProjectAsync(RemoveUserFromProjectRequest request, int currentUserId, CancellationToken ct)
+    {
+        var validation = await _removeUserFromProjectValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+            throw new ValidationException(validation.Errors);
+
+        await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "delete", "user-project-access", ct);
+
+        var projectExists = await _context.Projects.AnyAsync(p => p.Id == request.ProjectId && p.IsActive, ct);
+        if (!projectExists)
+            throw new NotFoundException("Project", request.ProjectId);
+
+        var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId && u.IsActive, ct);
+        if (!userExists)
+            throw new NotFoundException("User", request.UserId);
+
+        var userProjectAccess = await _context.UserProjectAccesses
+            .FirstOrDefaultAsync(upa => upa.IsActive && upa.ProjectId == request.ProjectId && upa.UserId == request.UserId, ct)
+            ?? throw new NotFoundException("UserProjectAccess", new { request.ProjectId, request.UserId });
+
+        userProjectAccess.IsActive = false;
+        await _context.SaveChangesAsync(ct);
+
+        return new RemoveUserFromProjectResponse(true);
     }
 
 }

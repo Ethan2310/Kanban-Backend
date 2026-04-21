@@ -36,3 +36,34 @@ public record ProjectSummaryResponse(
 public record GetProjectsResponse(
     IReadOnlyList<ProjectSummaryResponse> Projects,
     PaginationMetadata Pagination);
+
+public record AddUserToProjectRequest(
+    int ProjectId,
+    int UserId);
+
+public record AddUserToProjectResponse(
+    int ProjectId,
+    int UserId);
+
+
+public record GetUsersInProjectRequest(
+    int ProjectId,
+    int PageNumber = PaginationRequestDefaults.PageNumber,
+    int PageSize = PaginationRequestDefaults.PageSize);
+
+public record UserSummaryResponse(
+    int UserId,
+    string FirstName,
+    string LastName,
+    string Email);
+
+public record GetUsersInProjectResponse(
+    IReadOnlyList<UserSummaryResponse> Users,
+    PaginationMetadata Pagination);
+
+public record RemoveUserFromProjectRequest(
+    int ProjectId,
+    int UserId);
+
+public record RemoveUserFromProjectResponse(
+    bool Success);

@@ -60,3 +60,43 @@ public class GetProjectsRequestValidator : AbstractValidator<GetProjectsRequest>
             .LessThanOrEqualTo(100);
     }
 }
+
+public class AddUserToProjectRequestValidator : AbstractValidator<AddUserToProjectRequest>
+{
+    public AddUserToProjectRequestValidator()
+    {
+        RuleFor(x => x.ProjectId)
+            .GreaterThan(0);
+
+        RuleFor(x => x.UserId)
+            .GreaterThan(0);
+    }
+}
+
+public class GetUsersInProjectRequestValidator : AbstractValidator<GetUsersInProjectRequest>
+{
+    public GetUsersInProjectRequestValidator()
+    {
+        RuleFor(x => x.ProjectId)
+            .GreaterThan(0);
+
+        RuleFor(x => x.PageNumber)
+            .GreaterThan(0);
+
+        RuleFor(x => x.PageSize)
+            .GreaterThan(0)
+            .LessThanOrEqualTo(100);
+    }
+}
+
+public class RemoveUserFromProjectRequestValidator : AbstractValidator<RemoveUserFromProjectRequest>
+{
+    public RemoveUserFromProjectRequestValidator()
+    {
+        RuleFor(x => x.ProjectId)
+            .GreaterThan(0);
+
+        RuleFor(x => x.UserId)
+            .GreaterThan(0);
+    }
+}
