@@ -207,7 +207,7 @@ public class ProjectService
             .ThenBy(upa => upa.User.LastName)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(upa => new UserSummaryResponse(upa.User.Id, upa.User.FirstName, upa.User.LastName, upa.User.Email))
+            .Select(upa => new ProjectUserSummaryResponse(upa.User.Id, upa.User.FirstName, upa.User.LastName, upa.User.Email))
             .ToListAsync(ct);
 
         return new GetUsersInProjectResponse(users, new PaginationMetadata(request.PageNumber, request.PageSize, totalCount));

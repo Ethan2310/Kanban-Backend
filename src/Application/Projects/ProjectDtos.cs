@@ -1,5 +1,7 @@
 using Application.Common.Models;
 
+namespace Application.Projects;
+
 public record CreateProjectRequest(
     string Name,
     string? Description);
@@ -51,14 +53,14 @@ public record GetUsersInProjectRequest(
     int PageNumber = PaginationRequestDefaults.PageNumber,
     int PageSize = PaginationRequestDefaults.PageSize);
 
-public record UserSummaryResponse(
+public record ProjectUserSummaryResponse(
     int UserId,
     string FirstName,
     string LastName,
     string Email);
 
 public record GetUsersInProjectResponse(
-    IReadOnlyList<UserSummaryResponse> Users,
+    IReadOnlyList<ProjectUserSummaryResponse> Users,
     PaginationMetadata Pagination);
 
 public record RemoveUserFromProjectRequest(
