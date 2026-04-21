@@ -1,0 +1,15 @@
+$kind: http-request
+name: Add User To Project
+method: POST
+url: '{{baseUrl}}/api/projects/{projectId}/users'
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: json
+  content: |-
+    {
+      "userId": 1
+    }

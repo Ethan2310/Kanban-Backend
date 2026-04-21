@@ -98,6 +98,7 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SupportNonNullableReferenceTypes();
     options.SchemaFilter<StringEnumSchemaFilter>();
+    options.CustomSchemaIds(type => (type.FullName ?? type.Name).Replace('+', '.'));
 });
 
 var jwtSecret = builder.Configuration["Jwt:Secret"]
@@ -145,6 +146,7 @@ AuthEndpoints.Map(app);
 UserEndpoints.Map(app);
 BoardEndpoints.Map(app);
 ProjectEndpoints.Map(app);
+ProjectUserAccessEndpoints.Map(app);
 StatusEndpoints.Map(app);
 ListEndpoints.Map(app);
 TaskEndpoints.Map(app);
