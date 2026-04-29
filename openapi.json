@@ -2120,6 +2120,10 @@
           "description": {
             "type": "string",
             "nullable": true
+          },
+          "projectId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

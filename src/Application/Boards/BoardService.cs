@@ -45,6 +45,10 @@ public class BoardService
 
         await _adminAuthorizationService.EnsureAdminUserAsync(currentUserId, "create", "boards", ct);
 
+        var projectExists = await _context.Projects.AnyAsync(p => p.Id == request.ProjectId && p.IsActive, ct);
+        if (!projectExists)
+            throw new NotFoundException("Project", request.ProjectId);
+
         var board = new Domain.Entities.Board
         {
             Name = request.Name,
@@ -54,6 +58,17 @@ public class BoardService
         };
 
         _context.Boards.Add(board);
+        await _context.SaveChangesAsync(ct);
+
+        var projectBoard = new Domain.Entities.ProjectBoard
+        {
+            ProjectId = request.ProjectId,
+            BoardId = board.Id,
+            CreatedById = currentUserId,
+            CreatedOn = DateTime.UtcNow
+        };
+
+        _context.ProjectBoards.Add(projectBoard);
         await _context.SaveChangesAsync(ct);
 
         return new CreateBoardResponse(board.Id, board.Name, board.Description);
@@ -95,6 +110,18 @@ public class BoardService
             .FirstOrDefaultAsync(b => b.Id == request.BoardID, ct) ?? throw new NotFoundException("Board", request.BoardID);
 
         board.IsActive = false;
+
+        var projectBoardLinks = await _context.ProjectBoards
+            .Where(pb => pb.BoardId == request.BoardID && pb.IsActive)
+            .ToListAsync(ct);
+
+        foreach (var projectBoardLink in projectBoardLinks)
+        {
+            projectBoardLink.IsActive = false;
+            projectBoardLink.UpdatedById = currentUserId;
+            projectBoardLink.UpdatedOn = DateTime.UtcNow;
+        }
+
         await _context.SaveChangesAsync(ct);
 
         return new DeleteBoardResponse(true);

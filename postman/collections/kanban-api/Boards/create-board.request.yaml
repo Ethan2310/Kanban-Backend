@@ -12,5 +12,6 @@ body:
   content: |-
     {
       "name": "Example Name",
-      "description": "Example description"
+      "description": "Example description",
+      "projectId": 1
     }
