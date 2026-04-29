@@ -4,7 +4,8 @@ namespace Application.Boards;
 
 public record CreateBoardRequest(
     string Name,
-    string? Description);
+    string? Description,
+    int ProjectId);
 
 public record CreateBoardResponse(
     int BoardId,
